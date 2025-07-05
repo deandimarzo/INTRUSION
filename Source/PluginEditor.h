@@ -26,7 +26,7 @@ public:
     void paint(juce::Graphics& g) override
     {
         g.fillAll(juce::Colours::black);
-        g.setColour(juce::Colours::lime);
+        g.setColour(juce::Colours::red);
         
         auto area = getLocalBounds().toFloat();
         auto width = area.getWidth();
@@ -99,6 +99,25 @@ public:
     juce::Slider ochoLPFSlider;
     std::unique_ptr<juce::AudioProcessorValueTreeState::SliderAttachment> ochoLPFAttachment;
     juce::Label ochoLPFLabel;
+    
+    class CRTOscillationOverlay : public juce::Component
+    {
+    public:
+        void paint(juce::Graphics& g) override
+        {
+            int barHeight = 1;
+            int gapHeight = 3;
+            int totalHeight = getHeight();
+            int totalWidth = getWidth();
+
+            g.setColour(juce::Colours::black.withAlpha(0.2f));
+
+            for (int y = 0; y < totalHeight; y += (barHeight + gapHeight))
+                g.fillRect(0, y, totalWidth, barHeight);
+        }
+    };
+
+    CRTOscillationOverlay crtOverlay;
     
     GraphComponent absoluteGraph;
 

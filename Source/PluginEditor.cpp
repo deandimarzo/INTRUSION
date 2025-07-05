@@ -8,6 +8,24 @@
 
 #include "PluginProcessor.h"
 #include "PluginEditor.h"
+#include "BinaryData.h"
+
+static juce::Font getVCRFont(float size)
+{
+    static juce::Typeface::Ptr vcrTypeface = juce::Typeface::createSystemTypefaceFor(BinaryData::VCR_OSD_MONO_ttf, BinaryData::VCR_OSD_MONO_ttfSize);
+    return juce::Font(vcrTypeface).withHeight(size);
+}
+
+void styleSliderColor(juce::Slider& slider, juce::Colour color)
+{
+    slider.setColour(juce::Slider::rotarySliderFillColourId, color);
+    slider.setColour(juce::Slider::thumbColourId, color);
+    slider.setColour(juce::Slider::trackColourId, color);
+    slider.setColour(juce::Slider::textBoxTextColourId, color);
+    auto dark = color.darker(2.5f);
+    slider.setColour(juce::Slider::backgroundColourId, dark);
+    slider.setColour(juce::Slider::rotarySliderOutlineColourId, dark);
+}
 
 //==============================================================================
 INTRUSIONAudioProcessorEditor::INTRUSIONAudioProcessorEditor (INTRUSIONAudioProcessor& p)
@@ -18,14 +36,14 @@ INTRUSIONAudioProcessorEditor::INTRUSIONAudioProcessorEditor (INTRUSIONAudioProc
     setSize (400, 360);
     
     
-    absoluteAmountSlider.setSliderStyle(juce::Slider::Rotary);
+    absoluteAmountSlider.setSliderStyle(juce::Slider::RotaryHorizontalVerticalDrag);
     absoluteAmountSlider.setTextBoxStyle(juce::Slider::TextBoxBelow, false, 60, 20);
     addAndMakeVisible(absoluteAmountSlider);
 
     absoluteAmountAttachment = std::make_unique<juce::AudioProcessorValueTreeState::SliderAttachment>(
         audioProcessor.parameters, "absoluteAmount", absoluteAmountSlider);
     
-    absoluteOffsetSlider.setSliderStyle(juce::Slider::Rotary);
+    absoluteOffsetSlider.setSliderStyle(juce::Slider::RotaryHorizontalVerticalDrag);
     absoluteOffsetSlider.setTextBoxStyle(juce::Slider::TextBoxBelow, false, 60, 20);
     addAndMakeVisible(absoluteOffsetSlider);
 
@@ -35,47 +53,62 @@ INTRUSIONAudioProcessorEditor::INTRUSIONAudioProcessorEditor (INTRUSIONAudioProc
     addAndMakeVisible(absoluteGraph);
     
     // Dry Level Slider
-    dryLevelSlider.setSliderStyle(juce::Slider::Rotary);
+    dryLevelSlider.setSliderStyle(juce::Slider::RotaryHorizontalVerticalDrag);
     dryLevelSlider.setTextBoxStyle(juce::Slider::TextBoxBelow, false, 60, 20);
     addAndMakeVisible(dryLevelSlider);
     dryLevelAttachment = std::make_unique<juce::AudioProcessorValueTreeState::SliderAttachment>(
         audioProcessor.parameters, "dryLevel", dryLevelSlider);
 
     // Octave Level Slider
-    octaveLevelSlider.setSliderStyle(juce::Slider::Rotary);
+    octaveLevelSlider.setSliderStyle(juce::Slider::RotaryHorizontalVerticalDrag);
     octaveLevelSlider.setTextBoxStyle(juce::Slider::TextBoxBelow, false, 60, 20);
     addAndMakeVisible(octaveLevelSlider);
     octaveLevelAttachment = std::make_unique<juce::AudioProcessorValueTreeState::SliderAttachment>(
         audioProcessor.parameters, "octaveLevel", octaveLevelSlider);
     
     // Labels
-    absoluteAmountLabel.setText("ABS Amount", juce::dontSendNotification);
+    absoluteAmountLabel.setText("ABSOLUTION", juce::dontSendNotification);
     absoluteAmountLabel.attachToComponent(&absoluteAmountSlider, false);
     addAndMakeVisible(absoluteAmountLabel);
 
-    absoluteOffsetLabel.setText("DC Offset", juce::dontSendNotification);
+    absoluteOffsetLabel.setText("DC FUCK", juce::dontSendNotification);
     absoluteOffsetLabel.attachToComponent(&absoluteOffsetSlider, false);
     addAndMakeVisible(absoluteOffsetLabel);
 
-    dryLevelLabel.setText("Dry Level", juce::dontSendNotification);
+    dryLevelLabel.setText("0", juce::dontSendNotification);
     dryLevelLabel.attachToComponent(&dryLevelSlider, false);
     addAndMakeVisible(dryLevelLabel);
 
-    octaveLevelLabel.setText("Octave Level", juce::dontSendNotification);
+    octaveLevelLabel.setText("-8", juce::dontSendNotification);
     octaveLevelLabel.attachToComponent(&octaveLevelSlider, false);
     addAndMakeVisible(octaveLevelLabel);
     
     dryLevelSlider.setSliderStyle(juce::Slider::LinearVertical);
     octaveLevelSlider.setSliderStyle(juce::Slider::LinearVertical);
     
-    ochoLPFSlider.setSliderStyle(juce::Slider::Rotary);
+    ochoLPFSlider.setSliderStyle(juce::Slider::RotaryHorizontalVerticalDrag);
     ochoLPFSlider.setTextBoxStyle(juce::Slider::TextBoxBelow, false, 60, 20);
     addAndMakeVisible(ochoLPFSlider);
     ochoLPFAttachment = std::make_unique<juce::AudioProcessorValueTreeState::SliderAttachment>(
         audioProcessor.parameters, "ochoLPFCutoff", ochoLPFSlider);
-    ochoLPFLabel.setText("Ocho LPF", juce::dontSendNotification);
+    ochoLPFLabel.setText("Pre-Filter", juce::dontSendNotification);
     ochoLPFLabel.attachToComponent(&ochoLPFSlider, false);
     addAndMakeVisible(ochoLPFLabel);
+    
+    auto font = getVCRFont(14.0f);
+
+    absoluteAmountLabel.setFont(font);
+    absoluteOffsetLabel.setFont(font);
+    dryLevelLabel.setFont(font);
+    octaveLevelLabel.setFont(font);
+    ochoLPFLabel.setFont(font);
+
+    addAndMakeVisible(crtOverlay);
+    crtOverlay.setInterceptsMouseClicks(false, false); // Let clicks pass through
+    
+    
+    
+    
 }
 
 INTRUSIONAudioProcessorEditor::~INTRUSIONAudioProcessorEditor()
@@ -85,8 +118,7 @@ INTRUSIONAudioProcessorEditor::~INTRUSIONAudioProcessorEditor()
 //==============================================================================
 void INTRUSIONAudioProcessorEditor::paint (juce::Graphics& g)
 {
-    // (Our component is opaque, so we must completely fill the background with a solid colour)
-    g.fillAll (getLookAndFeel().findColour (juce::ResizableWindow::backgroundColourId));
+    g.fillAll(juce::Colour(0, 0, 0)); // dark background
 
 }
 
@@ -109,4 +141,16 @@ void INTRUSIONAudioProcessorEditor::resized()
 
     // Ocho LPF center
     ochoLPFSlider.setBounds((getWidth() / 2) - (knobSize / 2), 260, knobSize, knobSize);
+    
+    
+    // Colors
+    styleSliderColor(absoluteAmountSlider, juce::Colours::yellow);
+    styleSliderColor(absoluteOffsetSlider, juce::Colours::yellow);
+    
+    
+    styleSliderColor(dryLevelSlider, juce::Colours::red);
+    styleSliderColor(octaveLevelSlider, juce::Colours::red);
+    styleSliderColor(ochoLPFSlider, juce::Colours::red);
+    
+    crtOverlay.setBounds(getLocalBounds());
 }
