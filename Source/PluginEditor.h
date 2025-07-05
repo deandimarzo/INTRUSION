@@ -80,11 +80,25 @@ public:
     void paint (juce::Graphics&) override;
     void resized() override;
     
+    juce::Label absoluteAmountLabel;
+    juce::Label absoluteOffsetLabel;
+    juce::Label dryLevelLabel;
+    juce::Label octaveLevelLabel;
+    
     juce::Slider absoluteAmountSlider;
     std::unique_ptr<juce::AudioProcessorValueTreeState::SliderAttachment> absoluteAmountAttachment;
     
     juce::Slider absoluteOffsetSlider;
     std::unique_ptr<juce::AudioProcessorValueTreeState::SliderAttachment> absoluteOffsetAttachment;
+    
+    juce::Slider dryLevelSlider;
+    juce::Slider octaveLevelSlider;
+    std::unique_ptr<juce::AudioProcessorValueTreeState::SliderAttachment> dryLevelAttachment;
+    std::unique_ptr<juce::AudioProcessorValueTreeState::SliderAttachment> octaveLevelAttachment;
+    
+    juce::Slider ochoLPFSlider;
+    std::unique_ptr<juce::AudioProcessorValueTreeState::SliderAttachment> ochoLPFAttachment;
+    juce::Label ochoLPFLabel;
     
     GraphComponent absoluteGraph;
 
