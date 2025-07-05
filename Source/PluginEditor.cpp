@@ -31,6 +31,8 @@ INTRUSIONAudioProcessorEditor::INTRUSIONAudioProcessorEditor (INTRUSIONAudioProc
 
     absoluteOffsetAttachment = std::make_unique<juce::AudioProcessorValueTreeState::SliderAttachment>(
         audioProcessor.parameters, "absoluteOffset", absoluteOffsetSlider);
+    
+    addAndMakeVisible(absoluteGraph);
 }
 
 INTRUSIONAudioProcessorEditor::~INTRUSIONAudioProcessorEditor()
@@ -49,6 +51,7 @@ void INTRUSIONAudioProcessorEditor::resized()
 {
     // This is generally where you'll want to lay out the positions of any
     // subcomponents in your editor..
-    absoluteAmountSlider.setBounds(20, 20, 100, 100); // Adjust position/size
-    absoluteOffsetSlider.setBounds(200, 200, 100, 100); // Adjust position/size
+    absoluteGraph.setBounds(20, 20, getWidth() - 40, 100); // Full-width graph at top
+    absoluteAmountSlider.setBounds(60, 140, 100, 100);     // Left knob
+    absoluteOffsetSlider.setBounds(220, 140, 100, 100);    // Right knob
 }
