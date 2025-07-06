@@ -72,6 +72,18 @@ INTRUSIONAudioProcessorEditor::INTRUSIONAudioProcessorEditor (INTRUSIONAudioProc
     octaveLevelAttachment = std::make_unique<juce::AudioProcessorValueTreeState::SliderAttachment>(
         audioProcessor.parameters, "octaveLevel", octaveLevelSlider);
     
+    doubleFreqSlider.setSliderStyle(juce::Slider::LinearVertical);
+    doubleFreqSlider.setTextBoxStyle(juce::Slider::TextBoxBelow, false, 60, 20);
+    addAndMakeVisible(doubleFreqSlider);
+
+    doubleFreqAttachment = std::make_unique<juce::AudioProcessorValueTreeState::SliderAttachment>(
+        audioProcessor.parameters, "doubleFreqMix", doubleFreqSlider);
+
+    doubleFreqLabel.setText("+8", juce::dontSendNotification);
+    doubleFreqLabel.attachToComponent(&doubleFreqSlider, false);
+    doubleFreqLabel.setFont(getVCRFont(14.0f));
+    addAndMakeVisible(doubleFreqLabel);
+    
     // Labels
     cronchAmountLabel.setText("CRONCH", juce::dontSendNotification);
     cronchAmountLabel.attachToComponent(&cronchAmountSlider, false);
@@ -89,8 +101,11 @@ INTRUSIONAudioProcessorEditor::INTRUSIONAudioProcessorEditor (INTRUSIONAudioProc
     octaveLevelLabel.attachToComponent(&octaveLevelSlider, false);
     addAndMakeVisible(octaveLevelLabel);
     
+    
     dryLevelSlider.setSliderStyle(juce::Slider::LinearVertical);
     octaveLevelSlider.setSliderStyle(juce::Slider::LinearVertical);
+    
+    
     
     ochoLPFSlider.setSliderStyle(juce::Slider::RotaryHorizontalVerticalDrag);
     ochoLPFSlider.setTextBoxStyle(juce::Slider::TextBoxBelow, false, 60, 20);
@@ -151,32 +166,30 @@ void INTRUSIONAudioProcessorEditor::resized()
     const int margin = 20;
     const int knobSize = 80;
     const int narrowKnobWidth = 40;
-    const int spacing = 10;
+    const int spacing = 15;
 
     // Title
     titleLabel.setBounds(0, 10, getWidth(), 30);
 
     // Graph - expand horizontally, leave space for left/right controls
-    int graphLeft = margin + narrowKnobWidth * 2 + spacing * 2;
+    int graphLeft = margin + narrowKnobWidth * 3 + spacing * 3;
     int graphRight = getWidth() - (margin + knobSize + spacing);
     int graphWidth = graphRight - graphLeft;
-    absoluteGraph.setBounds(graphLeft,
-                            50,
-                            graphWidth,
-                            100);
+    absoluteGraph.setBounds(graphLeft, 50, graphWidth, 100);
 
     // OCHO controls on left
     dryLevelSlider.setBounds(margin, 100, narrowKnobWidth, 120);
     octaveLevelSlider.setBounds(margin + narrowKnobWidth + spacing, 100, narrowKnobWidth, 120);
+    doubleFreqSlider.setBounds(margin + (narrowKnobWidth + spacing) * 2, 100, narrowKnobWidth, 120);
     ochoLPFSlider.setBounds(margin, 260, knobSize, knobSize);
 
     // ABSOLUTE controls on right
     cronchAmountSlider.setBounds(getWidth() - margin - knobSize, 100, knobSize, knobSize);
     absoluteOffsetSlider.setBounds(getWidth() - margin - knobSize, 210, knobSize, knobSize);
 
-    // ABSOLUTION controls - move to center below graph
-    absolutionToggle.setBounds(getWidth() / 2 - knobSize / 2, 160, knobSize, 20);
-    absolutionThresholdSlider.setBounds(getWidth() / 2 - knobSize / 2, 210, knobSize, knobSize);
+    // ABSOLUTION controls - center bottom
+    absolutionToggle.setBounds(getWidth() / 2 - knobSize / 2, 170, knobSize, 20);
+    absolutionThresholdSlider.setBounds(getWidth() / 2 - knobSize / 2, 220, knobSize, knobSize);
 
     // Apply styling
     styleSliderColor(cronchAmountSlider, juce::Colours::blue);
@@ -185,6 +198,8 @@ void INTRUSIONAudioProcessorEditor::resized()
     styleSliderColor(octaveLevelSlider, juce::Colours::red);
     styleSliderColor(ochoLPFSlider, juce::Colours::red);
     styleSliderColor(absolutionThresholdSlider, juce::Colours::yellow);
+    styleSliderColor(doubleFreqSlider, juce::Colours::red);
+    
 
     crtOverlay.setBounds(getLocalBounds());
 }

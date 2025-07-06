@@ -116,6 +116,10 @@ public:
     std::unique_ptr<juce::AudioProcessorValueTreeState::SliderAttachment> dryLevelAttachment;
     std::unique_ptr<juce::AudioProcessorValueTreeState::SliderAttachment> octaveLevelAttachment;
     
+    juce::Slider doubleFreqSlider;
+    std::unique_ptr<juce::AudioProcessorValueTreeState::SliderAttachment> doubleFreqAttachment;
+    juce::Label doubleFreqLabel;
+    
     juce::Slider ochoLPFSlider;
     std::unique_ptr<juce::AudioProcessorValueTreeState::SliderAttachment> ochoLPFAttachment;
     juce::Label ochoLPFLabel;

@@ -26,7 +26,8 @@ INTRUSIONAudioProcessor::INTRUSIONAudioProcessor()
             std::make_unique<juce::AudioParameterFloat>("octaveLevel", "Octave Level", 0.0f, 1.0f, 1.0f),
             std::make_unique<juce::AudioParameterFloat>("ochoLPFCutoff", "Ocho LPF Cutoff", 50.0f, 8000.0f, 1000.0f),
             std::make_unique<juce::AudioParameterBool>("absolutionOn", "ABSOLUTION On", false),
-            std::make_unique<juce::AudioParameterFloat>("absolutionThreshold", "ABSOLUTION Threshold", 0.0f, 1.0f, 0.5f)
+            std::make_unique<juce::AudioParameterFloat>("absolutionThreshold", "ABSOLUTION Threshold", 0.0f, 1.0f, 0.5f),
+            std::make_unique<juce::AudioParameterFloat>("doubleFreqMix", "+8 Amount", 0.0f, 1.0f, 0.0f)
         })
 #endif
 {
@@ -191,8 +192,12 @@ void INTRUSIONAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer, ju
     float dcOffset = parameters.getRawParameterValue("absoluteOffset")->load();
     float dryLevel = parameters.getRawParameterValue("dryLevel")->load();
     float octaveLevel = parameters.getRawParameterValue("octaveLevel")->load();
+    float doubleFreqMix = parameters.getRawParameterValue("doubleFreqMix")->load();
+
     bool absolutionOn = parameters.getRawParameterValue("absolutionOn")->load() > 0.5f;
     float absolutionThreshold = parameters.getRawParameterValue("absolutionThreshold")->load();
+    
+    
 
     for (int channel = 0; channel < totalNumInputChannels; ++channel)
     {
@@ -203,13 +208,30 @@ void INTRUSIONAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer, ju
         {
             float inputSample = channelData[sample];
 
-            // Apply Ocho (octave down flip-flop)
-            float filtered = ochoFilters[channel].processSample(inputSample); // LPF pre-Ocho
-            float ochoSample = filtered * processOcho(filtered, lastInputStates[channel], flipFlopStates[channel], dcOffset);
-            // Apply ABSOLUTE to the Ocho output
-            float mixed = (inputSample * dryLevel) + (ochoSample * octaveLevel);
+            // Pre-Ocho LPF
+            float filtered = ochoFilters[channel].processSample(inputSample);
+
+            // Ocho flip-flop processing
+            float ochoSample = filtered * processOcho(filtered, lastInputStates[channel], flipFlopStates[channel]);
+
+            // +8 frequency doubling
+            float doubledSample = (2.0f * std::abs(inputSample)) - 1.0f;
+
+            // Mix Dry and Ocho
+            float levelSum = dryLevel + octaveLevel + doubleFreqMix;
+            float mixed = (inputSample * dryLevel) + (ochoSample * octaveLevel) + (doubledSample * doubleFreqMix);
+
+            if (levelSum > 1.0f)
+                mixed /= levelSum;
+            else if (levelSum == 0.0f)
+                mixed = 0.0f; // prevent NaN
+
+            // CRONCH distortion
             float shaped = applyCronchToSample(mixed, cronchAmount, dcOffset);
+
+            // ABSOLUTION gate
             float output = absolutionOn ? applyAbsolutionToSample(shaped, absolutionThreshold) : shaped;
+
             channelData[sample] = output;
         }
     }
