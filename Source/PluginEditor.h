@@ -34,10 +34,12 @@ public:
 
         juce::Path waveform;
 
-        float amount = processor.parameters.getRawParameterValue("absoluteAmount")->load();
+        float amount = processor.parameters.getRawParameterValue("cronchAmount")->load();
         float dcOffset = processor.parameters.getRawParameterValue("absoluteOffset")->load();
         float dryLevel = processor.parameters.getRawParameterValue("dryLevel")->load();
         float octaveLevel = processor.parameters.getRawParameterValue("octaveLevel")->load();
+        bool absolutionOn = processor.parameters.getRawParameterValue("absolutionOn")->load() > 0.5f;
+        float absolutionThreshold = processor.parameters.getRawParameterValue("absolutionThreshold")->load();
 
         int numPoints = (int)width;
         float lastInput = 0.0f;
@@ -46,10 +48,9 @@ public:
         for (int i = 0; i < numPoints; ++i)
         {
             float normX = (float)i / (numPoints - 1);
-            float input = std::sin(normX * juce::MathConstants<float>::twoPi * 2.0f);
+            float input = std::sin(normX * juce::MathConstants<float>::twoPi * 2.0f); // 2 cycles
             float adjustedInput = input + dcOffset;
 
-            // Simulate positive-going zero crossing
             if (lastInput < 0.0f && adjustedInput >= 0.0f)
                 flipMultiplier = -flipMultiplier;
 
@@ -57,8 +58,9 @@ public:
 
             float ocho = adjustedInput * flipMultiplier;
             float mixed = (input * dryLevel) + (ocho * octaveLevel);
-            float shaped = applyAbsoluteToSample(mixed, amount, dcOffset);
-            float pixelY = juce::jmap(shaped, -1.0f, 1.0f, height, 0.0f);
+            float shaped = applyCronchToSample(mixed, amount, dcOffset);
+            float output = absolutionOn ? applyAbsolutionToSample(shaped, absolutionThreshold) : shaped;
+            float pixelY = juce::jmap(output, -1.0f, 1.0f, height, 0.0f);
 
             if (i == 0)
                 waveform.startNewSubPath((float)i, pixelY);
@@ -74,11 +76,16 @@ private:
 
     void timerCallback() override { repaint(); }
 
-    float applyAbsoluteToSample(float x, float amount, float dcOffset)
+    float applyCronchToSample(float x, float amount, float dcOffset)
     {
         amount = juce::jlimit(0.01f, 100.0f, amount);
         float shaped = std::copysignf(1.0f - std::expf(-std::abs(x) * amount), x + dcOffset);
         return juce::jlimit(-1.0f, 1.0f, shaped);
+    }
+
+    float applyAbsolutionToSample(float x, float threshold)
+    {
+        return std::abs(x) <= threshold ? 0.0f : (x > 0 ? 1.0f : -1.0f);
     }
 };
 
@@ -93,13 +100,13 @@ public:
     void paint (juce::Graphics&) override;
     void resized() override;
     
-    juce::Label absoluteAmountLabel;
+    juce::Label cronchAmountLabel;
     juce::Label absoluteOffsetLabel;
     juce::Label dryLevelLabel;
     juce::Label octaveLevelLabel;
     
-    juce::Slider absoluteAmountSlider;
-    std::unique_ptr<juce::AudioProcessorValueTreeState::SliderAttachment> absoluteAmountAttachment;
+    juce::Slider cronchAmountSlider;
+    std::unique_ptr<juce::AudioProcessorValueTreeState::SliderAttachment> cronchAmountAttachment;
     
     juce::Slider absoluteOffsetSlider;
     std::unique_ptr<juce::AudioProcessorValueTreeState::SliderAttachment> absoluteOffsetAttachment;
@@ -112,6 +119,14 @@ public:
     juce::Slider ochoLPFSlider;
     std::unique_ptr<juce::AudioProcessorValueTreeState::SliderAttachment> ochoLPFAttachment;
     juce::Label ochoLPFLabel;
+    
+    juce::ToggleButton absolutionToggle;
+    std::unique_ptr<juce::AudioProcessorValueTreeState::ButtonAttachment> absolutionToggleAttachment;
+
+    juce::Slider absolutionThresholdSlider;
+    std::unique_ptr<juce::AudioProcessorValueTreeState::SliderAttachment> absolutionThresholdAttachment;
+
+    juce::Label absolutionThresholdLabel;
     
     juce::Label titleLabel;
     

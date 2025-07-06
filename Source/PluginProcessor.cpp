@@ -12,20 +12,22 @@
 //==============================================================================
 INTRUSIONAudioProcessor::INTRUSIONAudioProcessor()
 #ifndef JucePlugin_PreferredChannelConfigurations
-     : AudioProcessor (BusesProperties()
-                     #if ! JucePlugin_IsMidiEffect
-                      #if ! JucePlugin_IsSynth
-                       .withInput  ("Input",  juce::AudioChannelSet::stereo(), true)
-                      #endif
-                       .withOutput ("Output", juce::AudioChannelSet::stereo(), true)
-                     #endif
-                       ), parameters(*this, nullptr, juce::Identifier("Parameters"), {
-         std::make_unique<juce::AudioParameterFloat>("absoluteAmount", "ABSOLUTE Amount", 0.0f, 100.0f, 8.0f),
-         std::make_unique<juce::AudioParameterFloat>("absoluteOffset", "ABSOLUTE Offset", -1.0f, 1.0f, 0.0f),
-         std::make_unique<juce::AudioParameterFloat>("dryLevel", "Dry Level", 0.0f, 1.0f, 1.0f),
-         std::make_unique<juce::AudioParameterFloat>("octaveLevel", "Octave Level", 0.0f, 1.0f, 1.0f),
-         std::make_unique<juce::AudioParameterFloat>("ochoLPFCutoff", "Ocho LPF Cutoff", 50.0f, 8000.0f, 1000.0f)
-     })
+        : AudioProcessor (BusesProperties()
+                        #if ! JucePlugin_IsMidiEffect
+                         #if ! JucePlugin_IsSynth
+                          .withInput  ("Input",  juce::AudioChannelSet::stereo(), true)
+                         #endif
+                          .withOutput ("Output", juce::AudioChannelSet::stereo(), true)
+                        #endif
+                          ), parameters(*this, nullptr, juce::Identifier("Parameters"), {
+            std::make_unique<juce::AudioParameterFloat>("cronchAmount", "CRONCH Amount", 0.0f, 100.0f, 1.0f),
+            std::make_unique<juce::AudioParameterFloat>("absoluteOffset", "DC Offset", -1.0f, 1.0f, 0.0f),
+            std::make_unique<juce::AudioParameterFloat>("dryLevel", "Dry Level", 0.0f, 1.0f, 1.0f),
+            std::make_unique<juce::AudioParameterFloat>("octaveLevel", "Octave Level", 0.0f, 1.0f, 1.0f),
+            std::make_unique<juce::AudioParameterFloat>("ochoLPFCutoff", "Ocho LPF Cutoff", 50.0f, 8000.0f, 1000.0f),
+            std::make_unique<juce::AudioParameterBool>("absolutionOn", "ABSOLUTION On", false),
+            std::make_unique<juce::AudioParameterFloat>("absolutionThreshold", "ABSOLUTION Threshold", 0.0f, 1.0f, 0.5f)
+        })
 #endif
 {
 }
@@ -145,15 +147,16 @@ bool INTRUSIONAudioProcessor::isBusesLayoutSupported (const BusesLayout& layouts
 }
 #endif
 
-// ABSOLUTE distortion shaping function
-inline float applyAbsoluteToSample(float x, float amount, float dcOffset)
+inline float applyCronchToSample(float x, float amount, float dcOffset)
 {
-    // Clamp amount to avoid zero/negative values
     amount = juce::jlimit(0.01f, 100.0f, amount);
-    float absolutedSample = std::copysignf(1.0f - std::expf(-std::abs(x) * amount), x + dcOffset);
-    absolutedSample = juce::jlimit(-1.0f, 1.0f, absolutedSample);
-    
-    return absolutedSample;
+    float shaped = std::copysignf(1.0f - std::expf(-std::abs(x) * amount), x + dcOffset);
+    return juce::jlimit(-1.0f, 1.0f, shaped);
+}
+
+inline float applyAbsolutionToSample(float x, float threshold)
+{
+    return std::abs(x) <= threshold ? 0.0f : (x > 0 ? 1.0f : -1.0f);
 }
 
 inline float processOcho(float input, float& lastInput, float& flipMultiplier, float dcOffset = 0.0f)
@@ -184,10 +187,12 @@ void INTRUSIONAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer, ju
         buffer.clear (i, 0, buffer.getNumSamples());
 
     // MAIN AUDIO PROCESSING
-    float amount = parameters.getRawParameterValue("absoluteAmount")->load();
+    float cronchAmount = parameters.getRawParameterValue("cronchAmount")->load();
     float dcOffset = parameters.getRawParameterValue("absoluteOffset")->load();
     float dryLevel = parameters.getRawParameterValue("dryLevel")->load();
     float octaveLevel = parameters.getRawParameterValue("octaveLevel")->load();
+    bool absolutionOn = parameters.getRawParameterValue("absolutionOn")->load() > 0.5f;
+    float absolutionThreshold = parameters.getRawParameterValue("absolutionThreshold")->load();
 
     for (int channel = 0; channel < totalNumInputChannels; ++channel)
     {
@@ -203,8 +208,8 @@ void INTRUSIONAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer, ju
             float ochoSample = filtered * processOcho(filtered, lastInputStates[channel], flipFlopStates[channel], dcOffset);
             // Apply ABSOLUTE to the Ocho output
             float mixed = (inputSample * dryLevel) + (ochoSample * octaveLevel);
-            float output = applyAbsoluteToSample(mixed, amount, dcOffset);
-
+            float shaped = applyCronchToSample(mixed, cronchAmount, dcOffset);
+            float output = absolutionOn ? applyAbsolutionToSample(shaped, absolutionThreshold) : shaped;
             channelData[sample] = output;
         }
     }
