@@ -101,6 +101,10 @@ void INTRUSIONAudioProcessor::prepareToPlay (double sampleRate, int samplesPerBl
 {
     // Use this method as the place to do any pre-playback
     // initialisation that you need..
+    
+    lastInputStates.resize(getTotalNumInputChannels(), 0.0f);
+    flipFlopStates.resize(getTotalNumInputChannels(), 1.0f);
+    
     ochoFilters.resize(getTotalNumInputChannels());
     for (auto& filter : ochoFilters)
     {
@@ -154,7 +158,8 @@ inline float applyAbsoluteToSample(float x, float amount, float dcOffset)
 
 inline float processOcho(float input, float& lastInput, float& flipMultiplier, float dcOffset = 0.0f)
 {
-    float adjustedInput = input + dcOffset;
+    // float adjustedInput = input + dcOffset;
+    float adjustedInput = input; // trying out only applying DC to ABSOLUTE, not octave
 
     // Flip only on positive-going zero crossings
     if (lastInput < 0.0f && adjustedInput >= 0.0f)
@@ -171,8 +176,6 @@ void INTRUSIONAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer, ju
     auto totalNumInputChannels  = getTotalNumInputChannels();
     auto totalNumOutputChannels = getTotalNumOutputChannels();
     
-    static std::vector<float> lastInputStates(getTotalNumInputChannels(), 0.0f);
-    static std::vector<float> flipFlopStates(getTotalNumInputChannels(), 1.0f);
     
     float lpfCutoff = parameters.getRawParameterValue("ochoLPFCutoff")->load();
 

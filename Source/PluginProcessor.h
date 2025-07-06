@@ -60,5 +60,7 @@ public:
 private:
     //==============================================================================
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (INTRUSIONAudioProcessor)
+    std::vector<float> lastInputStates;
+    std::vector<float> flipFlopStates;
     
 };
