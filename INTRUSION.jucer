@@ -4,8 +4,6 @@
               addUsingNamespaceToJuceHeader="0" jucerFormatVersion="1">
   <MAINGROUP id="jd7yUm" name="INTRUSION">
     <GROUP id="{D2DD08C3-0A10-1194-5864-3D26F7FBEE63}" name="Source">
-      <FILE id="WQ3PfI" name="VCR_OSD_MONO.ttf" compile="0" resource="1"
-            file="../VCR_OSD_MONO.ttf"/>
       <FILE id="r7pfGP" name="PluginProcessor.cpp" compile="1" resource="0"
             file="Source/PluginProcessor.cpp"/>
       <FILE id="hT6Xx3" name="PluginProcessor.h" compile="0" resource="0"
@@ -14,6 +12,8 @@
             file="Source/PluginEditor.cpp"/>
       <FILE id="Wogqrh" name="PluginEditor.h" compile="0" resource="0" file="Source/PluginEditor.h"/>
     </GROUP>
+    <FILE id="WKaJpC" name="VCR_OSD_MONO.ttf" compile="0" resource="1"
+          file="/Users/longestsoloever/Downloads/VCR_OSD_MONO.ttf"/>
   </MAINGROUP>
   <MODULES>
     <MODULE id="juce_animation" showAllCode="1" useLocalCopy="0" useGlobalPath="1"/>
