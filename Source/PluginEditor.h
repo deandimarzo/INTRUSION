@@ -113,6 +113,8 @@ public:
     std::unique_ptr<juce::AudioProcessorValueTreeState::SliderAttachment> ochoLPFAttachment;
     juce::Label ochoLPFLabel;
     
+    juce::Label titleLabel;
+    
     class CRTOscillationOverlay : public juce::Component
     {
     public:

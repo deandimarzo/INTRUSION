@@ -35,13 +35,19 @@ INTRUSIONAudioProcessorEditor::INTRUSIONAudioProcessorEditor (INTRUSIONAudioProc
     // editor's size to whatever you need it to be.
     setSize (400, 360);
     
+    titleLabel.setText("INTRUSION", juce::dontSendNotification);
+    titleLabel.setFont(getVCRFont(24.0f));
+    titleLabel.setJustificationType(juce::Justification::centred);
+    addAndMakeVisible(titleLabel);
     
     absoluteAmountSlider.setSliderStyle(juce::Slider::RotaryHorizontalVerticalDrag);
     absoluteAmountSlider.setTextBoxStyle(juce::Slider::TextBoxBelow, false, 60, 20);
+    absoluteAmountSlider.setRange(0.0f, 20.0f, 0.01f);
     addAndMakeVisible(absoluteAmountSlider);
 
     absoluteAmountAttachment = std::make_unique<juce::AudioProcessorValueTreeState::SliderAttachment>(
         audioProcessor.parameters, "absoluteAmount", absoluteAmountSlider);
+
     
     absoluteOffsetSlider.setSliderStyle(juce::Slider::RotaryHorizontalVerticalDrag);
     absoluteOffsetSlider.setTextBoxStyle(juce::Slider::TextBoxBelow, false, 60, 20);
@@ -127,30 +133,34 @@ void INTRUSIONAudioProcessorEditor::resized()
     const int margin = 20;
     const int knobSize = 80;
     const int narrowKnobWidth = 40;
+    const int spacing = 10;
+
+    // Title
+    titleLabel.setBounds(0, 10, getWidth(), 30);
 
     // Graph
-    absoluteGraph.setBounds(120, margin, getWidth() - 240, 100);
-
-    // ABSOLUTE controls on right
-    absoluteAmountSlider.setBounds(getWidth() - margin - knobSize, 140, knobSize, knobSize);
-    absoluteOffsetSlider.setBounds(getWidth() - margin - knobSize, 240, knobSize, knobSize);
+    absoluteGraph.setBounds(margin + narrowKnobWidth * 2 + spacing * 2,
+                            50,
+                            getWidth() - (margin + narrowKnobWidth * 2 + spacing * 2) * 2,
+                            100);
 
     // OCHO controls on left
-    dryLevelSlider.setBounds(margin, 140, narrowKnobWidth, 160);
-    octaveLevelSlider.setBounds(margin + narrowKnobWidth + 10, 140, narrowKnobWidth, 160);
+    dryLevelSlider.setBounds(margin, 100, narrowKnobWidth, 120);
+    octaveLevelSlider.setBounds(margin + narrowKnobWidth + spacing, 100, narrowKnobWidth, 120);
+    ochoLPFSlider.setBounds(margin, 260, knobSize, knobSize);
 
-    // Ocho LPF center
-    ochoLPFSlider.setBounds((getWidth() / 2) - (knobSize / 2), 260, knobSize, knobSize);
+    // ABSOLUTE controls on right
+    absoluteAmountSlider.setBounds(getWidth() - margin - knobSize, 100, knobSize, knobSize);
+
     
-    
-    // Colors
+    absoluteOffsetSlider.setBounds(getWidth() - margin - knobSize, 200, knobSize, knobSize);
+
+    // Apply styling
     styleSliderColor(absoluteAmountSlider, juce::Colours::yellow);
     styleSliderColor(absoluteOffsetSlider, juce::Colours::yellow);
-    
-    
     styleSliderColor(dryLevelSlider, juce::Colours::red);
     styleSliderColor(octaveLevelSlider, juce::Colours::red);
     styleSliderColor(ochoLPFSlider, juce::Colours::red);
-    
+
     crtOverlay.setBounds(getLocalBounds());
 }
